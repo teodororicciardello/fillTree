@@ -1,0 +1,169 @@
+<html>
+  <HEAD>
+    <SCRIPT src="./js/jquery-3.1.1.js"></SCRIPT>
+    <SCRIPT language="javascript" type="text/javascript">
+      <!--
+	function Node(str){
+	  this.data = str; // store the string 
+	  this.level = 0; // level of the node in the tree (0 as base)
+	  this.links = null; // array of local links as strings
+	  this.extLinks = null; // array of external links as strings
+	  this.statContent= null; // array of static content (e.g. images)
+	  this.father = null; // pointer to the parent node
+	  this.children = []; // array of children 
+	}
+	function Tree(str){
+	  var node = new Node(str);
+	  this.root = node;
+	}
+	Tree.prototype.traverse = function (callback){
+	  (function recurse(currentNode) {
+	    for (var i = 0, length = currentNode.children.length; i < length; i++){
+	      recurse(currentNode.children[i]);
+	    }
+	    callback(currentNode);
+	  })(this.root);
+	};
+	Tree.prototype.contains = function(callback, traversal){
+	  traversal.call(this,  callback); 
+	};
+	Tree.prototype.add = function(str, links, extLinks, statContent, traversal){
+	  var child = new Node(str), 
+	    parent = null,
+	    callback = function(node){
+	      // check if previous text is full contained in the new string (father of)
+	      if (str.indexOf(node.data)!== -1){
+	        parent = node;
+	      }
+	    }
+	  ;
+	  this.contains(callback, traversal);
+	  if (parent){
+	    parent.children.push(child);
+	    child.parent = parent;
+	    child.level = parent.level + 1;
+	  }else {
+	    //throw new Error('Cannot add node to a non-existent parent'); // should never happen
+	    this.children.push(child); // if no parent as as child of root (unsorted)
+	  }
+	  // TODO-5 could be implemented better 
+	  child.links = links;
+	  child.extLinks = extLinks;
+	  child.statContent = statContent;
+	};
+	// Skipped implementation of remove
+	// Different traverse for print 
+	Tree.prototype.traversePre = function (callback){
+	  (function recurse(currentNode) {
+	    callback(currentNode);
+	    for (var i = 0, length = currentNode.children.length; i < length; i++){
+	      recurse(currentNode.children[i]);
+	    }
+	  })(this.root);
+	};
+	// function to print the tree using levels 
+	Tree.prototype.print = function(){
+	  var str = "",
+	    spacing = "",
+	    prefix = "|--",
+	    pointer = this;
+	  this.traversePre(function(node){
+	    for (var i = 0, length = node.level; i < length; i++){
+	      spacing+="   ";
+	    }
+	    str +=spacing + prefix + node.data + String.fromCharCode(13,10);
+	    str +=spacing + "   -----LOCAL LINKS-----" + String.fromCharCode(13,10);
+	    for (var i = 0; node.links != null && i < node.links.length; i++){
+	      str +=spacing + "   " + node.links[i] + String.fromCharCode(13,10);
+	    }
+	    str +=spacing + "   -----EXTERNAL LINKS-----" + String.fromCharCode(13,10);
+	    for (var i = 0; node.extLinks != null && i < node.extLinks.length; i++){
+	      str +=spacing + "   " + node.extLinks[i] + String.fromCharCode(13,10);
+	    }
+	    str +=spacing + "   -----STATIC CONTENT-----" + String.fromCharCode(13,10);
+	    for (var i = 0; node.statContent && i < node.statContent.length; i++){
+	      str +=spacing + "   " + node.statContent[i] + String.fromCharCode(13,10);
+	    }
+	    //str += String.fromCharCode(13,10);
+	  });
+	  return str;
+	};
+	// Fill the tree with the objects found in the source
+	Tree.prototype.fill = function(host){
+	  var proxiedAddr = "http://" + window.location.host + "/proxy/" + host;// Add as prefix the proxy part (use only target address)
+	  var address = "http://" + host; // rebuild full target address
+	  //var proxiedAddr = host, address = host;
+	  var links, extLinks, statContent;
+	  //console.log(proxiedAddr);
+	  //console.log(address);
+	  jQuery.ajaxSetup({async:false});//WORKAROUND to avoid parallel execution with other code
+	  $.get(proxiedAddr, function(response){
+	  //console.log(response);
+	    links = getLocLinks(host, response);
+	    extLinks = getExtLinks(host, response);
+	    statContent = getStatContent(response);
+	    tree.add(address, links, extLinks, statContent, tree.traversePre);
+	  //console.log(tree.print());
+	  //console.log(links);
+	  //console.log(extLinks);
+	  //console.log(statContent);
+	  for (var i = 0; links && i < links.length; i++){
+	    //loop to add the other resources from the same site
+	    var str = links[i].replace(/<a( |\n)+href="(http|https):\/\//,"").replace(/"/,"");// remove the un-necessary  parts from the link
+	    //console.log("str:"+str);
+	    this.fill(str);//  RECURSIVE on all the site, disable for test  
+	  }
+	  //console.log("ADDR:"+address);
+	  });
+	  // workaround to complete the get before continue
+	};
+	function getLocLinks(base, source){
+	  // Implement regex for internal links
+	  //var regex = new RegExp("<a(.|\n)+href=\".*" + base + ".*\"", "g");
+	  var regex = new RegExp("<a( |\n)+href=\".*" + base + ".*\"", "g");
+	  //console.log("REGEX:"+regex);
+	  return source.match(regex);
+	}
+	function getExtLinks(base, source){// string not matching the host
+	  //var regex = new RegExp("<a(.|\n)+href=\"^((?!" + base + ").)*\"", "g");
+	  return source.match(/<a( |\n)+href=".*"/g);// match intenal and external
+	}
+	function getStatContent(source){
+	  return source.match(/<img src=".*"/g);
+	}
+	// Populate the tree from content of the page
+	function populateResult(){
+	  var domain = "";
+	  if (document.form1.text1.value!=""){
+	    // TODO-5 add a check if not a valid domain
+	    domain = document.form1.text1.value; // to avoid side effects
+	    tree.fill(domain);
+	    //console.log(tree.print());
+	    document.form1.area1.value = tree.print();
+	    document.form1.text1.value="";
+	  }
+	}
+	var tree = new Tree("");
+      //-->
+    </SCRIPT>
+  </HEAD> 
+  <BODY>
+    Web Address:
+    <FORM name="form1" >
+      <input type="text" name="text1" size='60'/>
+      <input type="button" onclick="populateResult()" value="Add"/>
+      <br/>
+      <br/>
+      <br/>
+      Results:
+      <br/>
+      <textarea name="area1" readonly rows='20' cols='80'></textarea>
+    <FORM/>
+    <SCRIPT language="javascript" type="text/javascript">
+      <!--
+	// Test initialise text area1
+	//document.form1.area1.value="readonly"
+      //-->
+    </SCRIPT>
+  </BODY>
+</HTML>
