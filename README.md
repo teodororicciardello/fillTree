@@ -1,7 +1,8 @@
 This repo contains an exercise code for a web Crawler written in Javascript using Nginx as web proxy.
 As data structure it has been chosen a tree (non binary) to leverage existing algorithms to populate and traverse the data structure. 
 Nginx has been used both as a proxy and as a webserver to host the application.
-During the implementation some limitations has been introduced:
+
+During the implementation some limitations has been decided:
 - some common internal links that doesn't contain the domain (e.g. "/about") has been stored ayway as external links (prefixing the domain as necessary)
 - For simplicity only images has been considered as static content 
 - links are matched using http scheme in the content of the page (even if the page itself could be https)
@@ -16,14 +17,16 @@ TODO
 
 
 INSTALLATION INSTRUCTIONS
+
 Note: the following has been tested on an Ubuntu linux machine installed in AWS.
 Ensure you have installed Nginx and optionally Apache (the 'nginx_site' file assume Apache installed with php, anyway this is not a pre-requisite for the application).
+- Copy the file 'fillTree.htm' in the root of your Nginx/Apache server (here assumed /var/www/) together with the folder 'js'.
+- Copy the file 'nginx_site' in the sites folder of the Nginx (here assumed /etc/nginx/site-enabled/)
 
-Copy the file 'fillTree.htm' in the root of your Nginx/Apache server (here assumed /var/www/) together with the folder 'js'.
-Copy the file 'nginx_site' in the sites folder of the Nginx (here assumed /etc/nginx/site-enabled/)
 
 EXECUTION INSTRUCTIONS
-Open in a browser (tested in Chrome) the page fillTree.htm (e.g. http://mydomain/fillTree.htm). 
-Insert in the Web Address field the domain without http/https scheme (e.g. apache.org).
-Click Add to see the site tree populated in the textarea below.
+
+- Open in a browser (tested in Chrome) the page fillTree.htm (e.g. http://mydomain/fillTree.htm). 
+- Insert in the Web Address field the domain without http/https scheme (e.g. apache.org).
+- Click "Add" to see the site tree populated in the textarea below.
 
